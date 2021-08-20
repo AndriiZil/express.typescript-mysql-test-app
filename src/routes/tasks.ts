@@ -1,19 +1,21 @@
 import { Router } from 'express';
 import { TasksController } from '../controllers';
-import {jwtProtect} from '../middlewares';
+import { jwtProtect, validateCreateUpdateTask } from '../middlewares';
 
 const r = Router();
 
-r.post('/', jwtProtect, TasksController.create);
+r.post('/', validateCreateUpdateTask, jwtProtect, TasksController.create);
 
-r.get('/', TasksController.getAll);
+r.get('/', jwtProtect, TasksController.getAll);
 
-r.get('/:id', TasksController.getTaskById);
+r.get('/user', jwtProtect, TasksController.getAllCurrentUserTasks);
 
-r.patch('/change-status/:id', TasksController.changeStatusToCompleted);
+r.get('/:id', jwtProtect, TasksController.getTaskById);
 
-r.patch('/update/:id', TasksController.update);
+r.patch('/change-status/:id', jwtProtect, TasksController.changeStatusToCompleted);
 
-r.delete('/:id', TasksController.delete);
+r.patch('/update/:id', validateCreateUpdateTask, jwtProtect, TasksController.update);
+
+r.delete('/:id', jwtProtect, TasksController.delete);
 
 export default r;

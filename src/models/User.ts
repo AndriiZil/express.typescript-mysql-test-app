@@ -10,7 +10,10 @@ export class User {
     @Column({ length: 100 })
     name: string;
 
-    @Column({ length: 200 })
+    @Column({
+        length: 200,
+        select: false
+    })
     password: string;
 
     @Column({
@@ -21,7 +24,7 @@ export class User {
     })
     createdAt: Date;
 
-    @OneToMany(() => Task, task => task.user, { cascade: ["remove"] })
+    @OneToMany(() => Task, task => task.user, { onDelete: 'CASCADE' })
     tasks: Task[];
 
 }

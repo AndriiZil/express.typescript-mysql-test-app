@@ -1,25 +1,35 @@
-import {TaskService} from '../services';
-import {IRequest} from '../interfaces';
-import {NextFunction, Response} from 'express';
-import {HttpStatusCodes} from '../utils/httpStatuses';
+import { TaskService } from '../services';
+import { IRequest} from '../interfaces';
+import { NextFunction, Response } from 'express';
+import { HttpStatusCodes } from '../utils/httpStatuses';
 
 class TasksController {
 
     static async create(req: IRequest, res: Response, next: NextFunction) {
         try {
-            const result = await TaskService.create(req.body, Number(req.user.id));
+            const result = await TaskService.create(req.body, req.userId);
 
             return res.status(HttpStatusCodes.CREATED).json(result);
         } catch (err) {
-
+            next(err);
         }
     }
 
     static async getAll(req: IRequest, res: Response, next: NextFunction) {
         try {
-            const result = await TaskService.getAll();
+            const tasks = await TaskService.getAll();
 
-            return res.json(result);
+            return res.json(tasks);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    static async getAllCurrentUserTasks(req: IRequest, res: Response, next: NextFunction) {
+        try {
+            const tasks = await TaskService.getAllCurrentUserTasks(req.userId);
+
+            return res.json(tasks);
         } catch (err) {
             next(err);
         }
@@ -29,7 +39,7 @@ class TasksController {
         try {
             const result = await TaskService.getTaskById(Number(req.params.id));
 
-            return res.json(result[0]);
+            return res.json(result);
         } catch (err) {
             next(err);
         }

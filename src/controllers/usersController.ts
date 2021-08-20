@@ -29,26 +29,6 @@ class UsersController {
         }
     }
 
-    static async getMe(req: IRequest, res: Response, next: NextFunction) {
-        try {
-            const user = await UsersService.getById(Number(req.user.id));
-
-            return res.json({ ...user });
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    static async getById(req: IRequest, res: Response, next: NextFunction) {
-        try {
-            const user = await UsersService.getById(Number(req.user.id));
-
-            return res.json({ ...user });
-        } catch (err) {
-            next(err);
-        }
-    }
-
     static async getAll(req: IRequest, res: Response, next: NextFunction) {
         try {
             const allUsers = await UsersService.getAll();
@@ -62,9 +42,39 @@ class UsersController {
         }
     }
 
-    static async update(req: IRequest, res: Response, next: NextFunction) {
+    static async getById(req: IRequest, res: Response, next: NextFunction) {
         try {
-            await UsersService.update(Number(req.user.id), req.body);
+            const user = await UsersService.getById(Number(req.params.id));
+
+            return res.json({ ...user });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    static async getMe(req: IRequest, res: Response, next: NextFunction) {
+        try {
+            const user = await UsersService.getById(req.userId);
+
+            return res.json({ ...user });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    static async updateMe(req: IRequest, res: Response, next: NextFunction) {
+        try {
+            await UsersService.update(req.userId, req.body.name);
+
+            return res.status(HttpStatusCodes.NO_CONTENT).end();
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    static async updateById(req: IRequest, res: Response, next: NextFunction) {
+        try {
+            await UsersService.update(Number(req.params.id), req.body.name);
 
             return res.status(HttpStatusCodes.NO_CONTENT).end();
         } catch (err) {
@@ -74,7 +84,7 @@ class UsersController {
 
     static async delete(req: IRequest, res: Response, next: NextFunction) {
         try {
-            await UsersService.delete(Number(req.user.id));
+            await UsersService.delete(Number(req.params.id));
 
             return res.status(HttpStatusCodes.NO_CONTENT).end();
         } catch (err) {

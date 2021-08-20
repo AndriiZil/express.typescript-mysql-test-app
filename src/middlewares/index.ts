@@ -1,10 +1,18 @@
 import jwt from 'jsonwebtoken';
-import { NextFunction, Response, Request } from 'express';
-import { userSchema } from '../services/inputValidation';
+import { NextFunction, Response } from 'express';
+import {
+    createTaskSchema,
+    updateUserSchema,
+    userRegisterAndLoginSchema,
+    validateData
+} from '../services/inputValidation';
+import {IRequest} from '../interfaces';
+import {getRepository} from 'typeorm';
+import {User} from '../models/User';
 import {customError} from '../utils';
 import {HttpStatusCodes} from '../utils/httpStatuses';
 
-export async function jwtProtect(req: Request, res: Response, next: NextFunction) {
+export async function jwtProtect(req: IRequest, res: Response, next: NextFunction) {
     let token;
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
@@ -20,8 +28,22 @@ export async function jwtProtect(req: Request, res: Response, next: NextFunction
     }
 
     try {
-        // @ts-ignore
-        req['user'] = await jwt.verify(token, 'secret'); // TODO move to .env file
+        let user;
+        let userId;
+
+        const decoded = await jwt.verify(token, 'secret');
+
+        if (typeof decoded !== 'string' && decoded.id) {
+            userId = decoded.id;
+            user = await getRepository(User).findOne({ id: decoded.id });
+        }
+
+        if (!user) {
+            customError(`User not found.`, HttpStatusCodes.NOT_FOUND);
+        }
+        delete user.password;
+        req['userId'] = userId;
+
         next();
     } catch (err) {
         err.code = 401;
@@ -30,13 +52,14 @@ export async function jwtProtect(req: Request, res: Response, next: NextFunction
     }
 }
 
-export function validateUserCreation(req: Request, res: Response, next: NextFunction) {
-    console.log(req.body);
-    const { error } = userSchema.validate(req.body);
+export function validateUpdateUser(req: IRequest, res: Response, next: NextFunction) {
+    validateData(updateUserSchema, req, next);
+}
 
-    if (error) {
-        customError(error.message, HttpStatusCodes.FAILED_USER_INPUT);
-    }
+export function validateUserLoginAndRegister(req: IRequest, res: Response, next: NextFunction) {
+    validateData(userRegisterAndLoginSchema, req, next);
+}
 
-    next();
+export function validateCreateUpdateTask(req: IRequest, res: Response, next: NextFunction) {
+    validateData(createTaskSchema, req, next);
 }

@@ -1,22 +1,23 @@
 import { Router } from 'express';
-
 import UsersController from '../controllers/usersController';
-import { jwtProtect, validateUserCreation } from '../middlewares';
+import { jwtProtect, validateUpdateUser, validateUserLoginAndRegister } from '../middlewares';
 
 const r = Router();
 
-r.post('/create', validateUserCreation, UsersController.create);
+r.post('/create', validateUserLoginAndRegister, UsersController.create);
 
-r.post('/login', validateUserCreation, UsersController.login);
+r.post('/login', validateUserLoginAndRegister, UsersController.login);
 
-r.get('/', UsersController.getAll);
+r.get('/', jwtProtect, UsersController.getAll);
 
 r.get('/me', jwtProtect, UsersController.getMe);
 
 r.get('/:id', jwtProtect, UsersController.getById);
 
-r.patch('/:id', UsersController.update);
+r.patch('/me',  validateUpdateUser, jwtProtect, UsersController.updateMe);
 
-r.delete('/:id', UsersController.delete);
+r.patch('/:id',  validateUpdateUser, jwtProtect, UsersController.updateById);
+
+r.delete('/:id', jwtProtect, UsersController.delete);
 
 export default r;

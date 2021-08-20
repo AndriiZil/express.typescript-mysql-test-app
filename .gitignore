@@ -2,8 +2,8 @@
 .idea
 
 # Docker Db files
-db
 mysql
+db
 
 # Modules
 node_modules

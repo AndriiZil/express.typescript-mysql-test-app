@@ -1,26 +1,22 @@
 import { Repository } from 'typeorm/repository/Repository';
-import { DeleteResult, getRepository } from 'typeorm';
+import { getRepository } from 'typeorm';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
 import { HttpStatusCodes } from '../utils/httpStatuses';
 import { customError } from '../utils';
 
-interface IUser {
+interface INewUser {
     name: string;
     password: string;
 }
 
 class UsersService {
 
-    static async create({ name, password }: IUser) {
+    static async create({name, password}: INewUser): Promise<User | Error> {
         const userRepository = getRepository(User);
 
-        const user = await userRepository.findOne({ name });
-
-        if (user) {
-            customError('User already exists', HttpStatusCodes.FAILED_USER_INPUT);
-        }
+        await checkUserByName(userRepository, name);
 
         const passwordHash = await bcrypt.hash(password, 10);
 
@@ -29,13 +25,21 @@ class UsersService {
         newUser.password = passwordHash;
         await userRepository.save(newUser);
 
-        return formatUser([newUser])[0];
+        delete newUser.password;
+
+        return newUser;
     }
 
-    static async login({ name, password }: IUser) {
-        const userRepository = getRepository(User);
+    static async login({name, password}: INewUser): Promise<string | Error> {
+        const user = await getRepository(User)
+            .createQueryBuilder('user')
+            .addSelect('user.password')
+            .where('user.name = :name', { name })
+            .getOne();
 
-        const user = await UsersService.checkIfUserExists(userRepository, null, name);
+        if (!user) {
+            customError(`User with name: "${name}" was not found`, HttpStatusCodes.NOT_FOUND)
+        }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
@@ -45,73 +49,73 @@ class UsersService {
 
         return jwt.sign({
             id: user.id
-        }, 'secret', { expiresIn: 60 * 60 }); // TODO move to env
+        }, 'secret', {expiresIn: 60 * 60}); // TODO move to env
     }
 
-    static async getById(id: number) {
+    static async getAll(): Promise<User[]> {
         const userRepository = getRepository(User);
-        const user = await UsersService.checkIfUserExists(userRepository, id);
 
-        return user
+        return userRepository.find({});
     }
 
-    static async getAll() {
+    static async getById(id: number): Promise<User | Error> {
         const userRepository = getRepository(User);
 
-        return userRepository.find();
+        return checkIfUserExists(userRepository, id);
     }
 
-
-    static async delete(id: number): Promise<DeleteResult> {
+    static async delete(id: number): Promise<void | Error> {
         const userRepository = getRepository(User);
 
-        await UsersService.checkIfUserExists(userRepository, id);
+        await checkIfUserExists(userRepository, id);
 
-        return userRepository.delete(id);
+        await userRepository.delete(id);
     }
 
-    static async update(id: number, body: object) {
+    static async update(id: number, name: string): Promise<void | Error> {
         const userRepository = getRepository(User);
 
-        await UsersService.checkIfUserExists(userRepository, id);
+        await checkIfUserExists(userRepository, id);
+
+        await checkUserByName(userRepository, name);
 
         await userRepository
             .createQueryBuilder()
             .update(User)
-            .set(body)
-            .where('id = :id', { id })
+            .set({name})
+            .where('id = :id', {id})
             .execute();
-    }
-
-    static async checkIfUserExists(repository: Repository<User>, id?: number, name?: string) {
-        let user;
-        const condition = id ? `such id ${id}` : `such name ${name}`;
-
-        if (id) {
-            user = await repository.findOne({ id }, { relations: ['tasks']})
-        } else if (name) {
-            user = await repository.findOne({ name }, { relations: ['tasks']})
-        } else {
-            return;
-        }
-
-        if (!user) {
-            customError(`User with ${condition} was not found`, HttpStatusCodes.NOT_FOUND);
-        }
-
-        return user;
     }
 
 }
 
-function formatUser(users: User[]) {
-    return users.map(user => {
-        return {
-            userId: user.id,
-            name: user.name,
-            createdAt: user.createdAt,
-        }
-    });
+async function checkIfUserExists(userRepository: Repository<User>, id: number, name?: string): Promise<User | Error> {
+    let user;
+
+    if (id) {
+        user = await userRepository.findOne({ id }, {relations: ['tasks']});
+    } else if (name) {
+        user = await userRepository.findOne({ name }, {relations: ['tasks']});
+    } else {
+        return;
+    }
+
+    if (!user) {
+        customError(`User with such id: "${id}" was not found.`, HttpStatusCodes.NOT_FOUND);
+    }
+
+    return user;
+}
+
+async function checkUserByName(userRepository: Repository<User>, name: string): Promise<void | Error> {
+    const user = await userRepository.findOne({ name });
+
+    if (user) {
+        customError(
+            `User with name "${name}" already exists. Please use another one.`,
+            HttpStatusCodes.FAILED_USER_INPUT
+        );
+    }
 }
 
 export default UsersService;

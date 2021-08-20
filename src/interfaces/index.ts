@@ -7,6 +7,7 @@ export interface ICustomError extends Error {
 
 export interface IRequest extends Request {
     [key: string]: any
+    userId?: number;
 }
 
 export interface ICookieOptions {
