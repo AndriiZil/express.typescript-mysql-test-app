@@ -6,7 +6,6 @@ import cookieParser from 'cookie-parser';
 import { Router } from './routes/allRoutes';
 import { establishConnection } from './db/db-connection';
 import { error404, handleErrors } from './utils';
-import config from './config';
 
 class Server {
 
@@ -40,8 +39,8 @@ class Server {
     }
 
     listen() {
-        this.server = this.app.listen(config.port, () => {
-            console.log(`Server started on port ${config.port}`);
+        this.server = this.app.listen(process.env.PORT, () => {
+            console.log(`Server started on port ${process.env.PORT}`);
         });
     }
 

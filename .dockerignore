@@ -1,0 +1,7 @@
+.git
+node_modules
+.idea
+mysql
+Dockerfile
+docker-compose.yml
+dist
