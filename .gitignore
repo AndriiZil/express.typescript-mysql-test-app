@@ -1,0 +1,12 @@
+# WebStorm configuration files
+.idea
+
+# Docker Db files
+db
+mysql
+
+# Modules
+node_modules
+
+# Environments
+.env
