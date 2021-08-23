@@ -24,6 +24,7 @@ services:
       dockerfile: Dockerfile
     environment:
       PORT: 3000
+      SECRET: 'FEa987fbfGya0jweHGwrg34e5S6ds7'
     container_name: app
     ports:
       - '3000:3000'

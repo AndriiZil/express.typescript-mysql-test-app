@@ -49,7 +49,7 @@ class UsersService {
 
         return jwt.sign({
             id: user.id
-        }, 'secret', {expiresIn: 60 * 60}); // TODO move to env
+        }, process.env.SECRET, { expiresIn: 60 * 60 * 1000 });
     }
 
     static async getAll(): Promise<User[]> {

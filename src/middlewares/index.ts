@@ -1,5 +1,6 @@
-import jwt from 'jsonwebtoken';
 import { NextFunction, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import { getRepository } from 'typeorm';
 import {
     createTaskSchema,
     updateUserSchema,
@@ -7,10 +8,9 @@ import {
     validateData
 } from '../services/inputValidation';
 import {IRequest} from '../interfaces';
-import {getRepository} from 'typeorm';
-import {User} from '../models/User';
-import {customError} from '../utils';
-import {HttpStatusCodes} from '../utils/httpStatuses';
+import { User } from '../models/User';
+import { customError } from '../utils';
+import { HttpStatusCodes } from '../utils/httpStatuses';
 
 export async function jwtProtect(req: IRequest, res: Response, next: NextFunction) {
     let token;
@@ -31,7 +31,7 @@ export async function jwtProtect(req: IRequest, res: Response, next: NextFunctio
         let user;
         let userId;
 
-        const decoded = await jwt.verify(token, 'secret');
+        const decoded = await jwt.verify(token, process.env.SECRET);
 
         if (typeof decoded !== 'string' && decoded.id) {
             userId = decoded.id;
@@ -41,7 +41,7 @@ export async function jwtProtect(req: IRequest, res: Response, next: NextFunctio
         if (!user) {
             customError(`User not found.`, HttpStatusCodes.NOT_FOUND);
         }
-        delete user.password;
+
         req['userId'] = userId;
 
         next();

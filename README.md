@@ -1,6 +1,1 @@
 # REST API
-### Users
-```
-    
-```
-## Tasks
